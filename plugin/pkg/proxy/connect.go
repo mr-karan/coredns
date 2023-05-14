@@ -1,12 +1,13 @@
-// Package forward implements a forwarding proxy. It caches an upstream net.Conn for some time, so if the same
+// Package proxy implements a forwarding proxy. It caches an upstream net.Conn for some time, so if the same
 // client returns the upstream's Conn will be precached. Depending on how you benchmark this looks to be
 // 50% faster than just opening a new connection for every client. It works with UDP and TCP and uses
 // inband healthchecking.
-package forward
+package proxy
 
 import (
 	"context"
 	"io"
+	"net"
 	"strconv"
 	"sync/atomic"
 	"time"
@@ -72,14 +73,14 @@ func (t *Transport) Dial(proto string) (*persistConn, bool, error) {
 }
 
 // Connect selects an upstream, sends the request and waits for a response.
-func (p *Proxy) Connect(ctx context.Context, state request.Request, opts options) (*dns.Msg, error) {
+func (p *Proxy) Connect(ctx context.Context, state request.Request, opts Options) (*dns.Msg, error) {
 	start := time.Now()
 
 	proto := ""
 	switch {
-	case opts.forceTCP: // TCP flag has precedence over UDP flag
+	case opts.ForceTCP: // TCP flag has precedence over UDP flag
 		proto = "tcp"
-	case opts.preferUDP:
+	case opts.PreferUDP:
 		proto = "udp"
 	default:
 		proto = state.Proto()
@@ -113,15 +114,24 @@ func (p *Proxy) Connect(ctx context.Context, state request.Request, opts options
 	}
 
 	var ret *dns.Msg
-	pc.c.SetReadDeadline(time.Now().Add(readTimeout))
+	pc.c.SetReadDeadline(time.Now().Add(p.readTimeout))
 	for {
 		ret, err = pc.c.ReadMsg()
 		if err != nil {
-			pc.c.Close() // not giving it back
+			// For UDP, if the error is not a network error keep waiting for a valid response to prevent malformed
+			// spoofs from blocking the upstream response.
+			// In the case this is a legitimate malformed response from the upstream, this will result in a timeout.
+			if proto == "udp" {
+				if _, ok := err.(net.Error); !ok {
+					continue
+				}
+			}
+			pc.c.Close() // connection closed by peer, close the persistent connection
 			if err == io.EOF && cached {
 				return nil, ErrCachedClosed
 			}
-			// recovery the origin Id after upstream.
+
+			// recover the origin Id after upstream.
 			if ret != nil {
 				ret.Id = originId
 			}

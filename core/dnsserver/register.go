@@ -1,7 +1,6 @@
 package dnsserver
 
 import (
-	"flag"
 	"fmt"
 	"net"
 	"time"
@@ -17,12 +16,7 @@ import (
 
 const serverType = "dns"
 
-// Any flags defined here, need to be namespaced to the serverType other
-// wise they potentially clash with other server types.
 func init() {
-	flag.StringVar(&Port, serverType+".port", DefaultPort, "Default port")
-	flag.StringVar(&Port, "p", DefaultPort, "Default port")
-
 	caddy.RegisterServerType(serverType, caddy.ServerType{
 		Directives: func() []string { return Directives },
 		DefaultInput: func() caddy.Input {
@@ -293,7 +287,7 @@ func (h *dnsContext) validateZonesAndListeningAddresses() error {
 	return nil
 }
 
-// groupSiteConfigsByListenAddr groups site configs by their listen
+// groupConfigsByListenAddr groups site configs by their listen
 // (bind) address, so sites that use the same listener can be served
 // on the same server instance. The return value maps the listen
 // address (what you pass into net.Listen) to the list of site configs.

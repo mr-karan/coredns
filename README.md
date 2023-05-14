@@ -53,7 +53,7 @@ out-of-tree plugins.
 To compile CoreDNS, we assume you have a working Go setup. See various tutorials if you don’t have
 that already configured.
 
-First, make sure your golang version is 1.17 or higher as `go mod` support and other api is needed.
+First, make sure your golang version is 1.20 or higher as `go mod` support and other api is needed.
 See [here](https://github.com/golang/go/wiki/Modules) for `go mod` details.
 Then, check out the project and run `make` to compile the binary:
 
@@ -71,7 +71,7 @@ CoreDNS requires Go to compile. However, if you already have docker installed an
 setup a Go environment, you could build CoreDNS easily:
 
 ```
-$ docker run --rm -i -t -v $PWD:/v -w /v golang:1.18 make
+$ docker run --rm -i -t -v $PWD:/v -w /v golang:1.20 make
 ```
 
 The above command alone will have `coredns` binary generated.
@@ -256,7 +256,7 @@ More resources can be found:
 ## Contribution guidelines
 
 If you want to contribute to CoreDNS, be sure to review the [contribution
-guidelines](CONTRIBUTING.md).
+guidelines](./.github/CONTRIBUTING.md).
 
 ## Deployment
 
@@ -292,4 +292,4 @@ issue, instead send your report privately to `security@coredns.io`. Security rep
 appreciated and we will publicly thank you for it.
 
 Please consult [security vulnerability disclosures and security fix and release process
-document](https://github.com/coredns/coredns/blob/master/SECURITY.md)
+document](https://github.com/coredns/coredns/blob/master/.github/SECURITY.md)
